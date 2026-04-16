@@ -25,81 +25,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download Windows Full Build
+      - name: Download iOS Artifact
         uses: dawidd6/action-download-artifact@v6
         with:
-          workflow: windows.yml
-          name: Codename Engine
-          path: artifacts/windows/full_build
-          allow_forks: false
+          workflow: ios.yml
+          name: Codename Engine iOS # Matches your previous iOS YML upload name
+          path: artifacts/ios
 
-      - name: Download Windows Executable
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          workflow: windows.yml
-          name: Codename Engine (Executable Only)
-          path: artifacts/windows/executable
-          allow_forks: false
-
-      - name: Download Mac OS Full Build
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          workflow: macos.yml
-          name: Codename Engine
-          path: artifacts/macos/full_build
-          allow_forks: false
-
-      - name: Download Mac OS Executable
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          workflow: macos.yml
-          name: Codename Engine (Executable Only)
-          path: artifacts/macos/executable
-          allow_forks: false
-
-      - name: Download Linux Full Build
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          workflow: linux.yml
-          name: Codename Engine
-          path: artifacts/linux/full_build
-          allow_forks: false
-
-      - name: Download Linux Executable
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          workflow: linux.yml
-          name: Codename Engine (Executable Only)
-          path: artifacts/linux/executable
-          allow_forks: false
-
+      # --- PROCESSING ---
       - name: Prepare artifacts
         run: |
           mkdir -p renamed
 
-          # Windows
-          mv artifacts/windows/executable/CodenameEngine.exe renamed/update-windows.exe
-          cd artifacts/windows/full_build
-          zip -r ../../../renamed/"Codename Engine-Windows.zip" *
-          cd -
-
-          # Mac OS
-          mv artifacts/macos/executable/CodenameEngine renamed/update-mac
-          cd artifacts/macos/full_build
-          if [ -f CodenameEngine.tar.gz ]; then
-            # Keep tar.gz as-is
-            cp CodenameEngine.tar.gz ../../../renamed/"Codename Engine-Mac.tar.gz"
-          else
-            # Zip contents at root
-            zip -r ../../../renamed/"Codename Engine-Mac.zip" *
-          fi
-          cd -
-
-          # Linux
-          mv artifacts/linux/executable/CodenameEngine renamed/update-linux
-          cd artifacts/linux/full_build
-          zip -r ../../../renamed/"Codename Engine-Linux.zip" *
-          cd -
+          # iOS (Renaming ipa to include tag)
+          find artifacts/ios/ -name "*.ipa" -exec cp {} renamed/"CodenameEngine-iOS.ipa" \;
 
       - name: Find Base Release
         id: get_base_release
@@ -179,21 +118,13 @@ jobs:
 
       - name: Create GitHub Release with Assets
         uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.event.inputs.tag_name }}
           name: Release ${{ github.event.inputs.tag_name }}
           draft: true
           prerelease: ${{ github.event.inputs.prerelease }}
-          body: ${{ steps.build_body.outputs.body }}
+          body: ${{ steps.pre_changelog_message.outputs.body }}
           generate_release_notes: true
           files: |
-            renamed/Codename Engine-Windows.zip
-            renamed/Codename Engine-Mac.zip
-            renamed/Codename Engine-Mac.tar.gz
-            renamed/Codename Engine-Linux.zip
+            renamed/CodenameEngine-iOS.ipa
             renamed/update-assets.zip
-            renamed/update-windows.exe
-            renamed/update-mac
-            renamed/update-linux
