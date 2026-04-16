@@ -28,7 +28,7 @@ jobs:
       - name: Download iOS Artifact
         uses: dawidd6/action-download-artifact@v6
         with:
-          workflow: ios.yml
+          workflow: iOS.yml
           name: Codename Engine iOS # Matches your previous iOS YML upload name
           path: artifacts/ios
 
